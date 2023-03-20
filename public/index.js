@@ -66,6 +66,7 @@ function reveal(elem) {
 }
 
 function addListeners() {
+  debugger;
   rc.on(RoomClient.EVENTS.startScreen, () => {
     hide(startScreenButton);
     reveal(stopScreenButton);
@@ -108,7 +109,7 @@ let isEnumerateVideoDevices = false;
 
 function initEnumerateDevices() {
   // Many browsers, without the consent of getUserMedia, cannot enumerate the devices.
-
+  debugger;
   const constraints = {
     audio: true,
     video: true,
@@ -128,6 +129,7 @@ function initEnumerateDevices() {
 }
 
 function enumerateDevices() {
+  debugger;
   if (!isEnumerateVideoDevices) {
     // Load mediaDevice options
     navigator.mediaDevices.enumerateDevices().then((devices) =>
@@ -164,6 +166,4 @@ function enumerateDevices() {
     );
     isEnumerateAudioDevices = true;
   }
-  rc.produce(RoomClient.mediaType.video, videoSelect.value);
-  rc.produce(RoomClient.mediaType.audio, audioSelect.value);
 }
