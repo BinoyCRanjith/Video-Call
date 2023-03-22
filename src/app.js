@@ -14,7 +14,6 @@ const options = {
   cert: fs.readFileSync(path.join(__dirname, config.sslCrt), 'utf-8')
 }
 
-console.log('SSL Details',options);
 const httpsServer = https.createServer(options, app)
 const io = require('socket.io')(httpsServer)
 
@@ -48,9 +47,9 @@ let nextMediasoupWorkerIdx = 0
  */
 let roomList = new Map()
 
-;(async () => {
-  await createWorkers()
-})()
+  ; (async () => {
+    await createWorkers()
+  })()
 
 async function createWorkers() {
   let { numWorkers } = config.mediasoup
@@ -236,7 +235,30 @@ io.on('connection', (socket) => {
 
     callback('successfully exited room')
   })
+
+
+  socket.on('getParticipantList', (clientRoom, callback) => {
+    let roomDetails = getRoomDetails(clientRoom);
+
+    var peersArray = [];
+
+    for (var [peerId, peer] of roomDetails.peers) {
+      peersArray.push({ id: peerId, name: peer.name });
+    }
+
+    const resp = JSON.stringify(peersArray);
+    callback(resp);
+  });
+
 })
+
+function getRoomDetails(room_id) {
+  if (roomList.has(room_id)) {
+    return roomList.get(room_id);
+  } else {
+    return null;
+  }
+}
 
 // TODO remove - never used?
 function room() {

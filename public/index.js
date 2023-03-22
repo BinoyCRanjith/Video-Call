@@ -20,12 +20,18 @@ socket.request = function request(type, data = {}) {
 };
 
 let rc = null;
+// const UserDetail = ({
+//   // type: `${kind}`,
+//   name: `${roomList.get(socket.room_id).getPeers().get(socket.id).name}`
+//   // id: `${producer_id}`
+// })
 
 function joinRoom(name, room_id) {
   if (rc && rc.isOpen()) {
     console.log("Already connected to a room");
   } else {
     initEnumerateDevices();
+    // UserDetails();
 
     rc = new RoomClient(
       localMedia,
@@ -153,6 +159,7 @@ function enumerateDevices() {
     navigator.mediaDevices.enumerateDevices().then((devices) =>
       devices.forEach((device) => {
         let el = null;
+
         if ("audioinput" === device.kind) {
           el = audioSelect;
           if (!el) return;
@@ -167,3 +174,23 @@ function enumerateDevices() {
     isEnumerateAudioDevices = true;
   }
 }
+// console.log('Produce', {
+//   type: `${kind}`,
+//   name: `${roomList.get(socket.room_id).getPeers().get(socket.id).name}`,
+//   id: `${producer_id}`
+// })
+// function UserDetails()
+// {
+//   debugger;
+//   const userList = document.getElementById('user-list');
+//   const ul = document.createElement('ul');
+
+//   devices.forEach(UserDetail => {
+//     const li = document.createElement('li');
+//     li.textContent = `Name: ${UserDetail.name}`;
+//     ul.appendChild(li);
+//   });
+
+// userList.appendChild(ul);
+
+// }

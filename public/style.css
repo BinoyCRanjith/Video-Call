@@ -31,3 +31,42 @@ body {
 .hidden {
   display: none;
 }
+
+/*testing purpose*/
+.user-list {
+  border: 1px solid #ccc;
+  padding: 10px;
+  max-height: 300px;
+  overflow-y: scroll;
+}
+
+.user-list ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.user-list li {
+  padding: 5px;
+  font-size: 16px;
+  color: #333;
+  border-bottom: 1px solid #ccc;
+}
+
+.user-list li:last-child {
+  border-bottom: none;
+}
+
+.btn {
+  background-color: DodgerBlue;
+  border: none;
+  color: white;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Darker background on mouse-over */
+.btn:hover {
+  background-color: RoyalBlue;
+}

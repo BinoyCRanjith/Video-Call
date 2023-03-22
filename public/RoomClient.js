@@ -17,6 +17,7 @@ const _EVENTS = {
 var audioProducerId = null;
 var videoProducerId = null;
 var sysAudio = false;
+let elem;
 
 class RoomClient {
   constructor(
@@ -278,6 +279,190 @@ class RoomClient {
 
   //////// MAIN FUNCTIONS /////////////
 
+  getParticipantList() {
+    socket.emit('getParticipantList', '123', (roomDetails) => {
+      console.log(roomDetails);
+    });
+  }
+
+
+
+
+  async replace(type, deviceId = null) {
+    debugger;
+    let mediaConstraints = {}
+    let audio = false
+    switch (type) {
+      case mediaType.audio:
+        mediaConstraints = {
+          audio: {
+            deviceId: deviceId
+          },
+          video: false
+        }
+        audio = true
+        break
+      case mediaType.video:
+        mediaConstraints = {
+          audio: false,
+          video: {
+            width: {
+              min: 640,
+              ideal: 1920
+            },
+            height: {
+              min: 400,
+              ideal: 1080
+            },
+            deviceId: deviceId
+            /*aspectRatio: {
+                            ideal: 1.7777777778
+                        }*/
+          }
+        }
+        break
+      default:
+        return
+    }
+    if (!this.device.canProduce('video') && !audio) {
+      console.error('Cannot produce video')
+      return
+    }
+    console.log('Mediacontraints:', mediaConstraints)
+    let stream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
+      console.log(navigator.mediaDevices.getSupportedConstraints())
+
+      const track = audio ? stream.getAudioTracks()[0] : stream.getVideoTracks()[0]
+      const params = {
+        track
+      }
+      if (!audio) {
+        params.encodings = [
+          {
+            rid: 'r0',
+            maxBitrate: 100000,
+            //scaleResolutionDownBy: 10.0,
+            scalabilityMode: 'S3T3'
+          },
+          {
+            rid: 'r1',
+            maxBitrate: 300000,
+            scalabilityMode: 'S3T3'
+          },
+          {
+            rid: 'r2',
+            maxBitrate: 900000,
+            scalabilityMode: 'S3T3'
+          }
+        ]
+        params.codecOptions = {
+          videoGoogleStartBitrate: 1000
+        }
+      }
+
+      if (!this.producerLabel.has(type)) {
+        console.log('There is no producer for this type ' + type)
+        return
+      }
+
+      let producer_id = this.producerLabel.get(type)
+      console.log('Close producer', producer_id)
+
+      this.socket.emit('producerClosed', {
+        producer_id
+      })
+
+      this.producers.get(producer_id).close()
+      this.producers.delete(producer_id)
+      this.producerLabel.delete(type)
+
+      if (type !== mediaType.audio) {
+        let elem = document.getElementById(producer_id)
+        elem.srcObject.getTracks().forEach(function (track) {
+          track.stop()
+        })
+        elem.parentNode.removeChild(elem)
+      }
+
+      switch (type) {
+        case mediaType.audio:
+          this.event(_EVENTS.stopAudio)
+          break
+        case mediaType.video:
+          this.event(_EVENTS.stopVideo)
+          break
+        default:
+          return
+      }
+
+      // await producer.replaceTrack(params);
+
+      producer = await this.producerTransport.produce(params);
+      console.log("Producer", producer);
+      this.producers.set(producer.id, producer);
+
+      if (!audio) {
+        elem = document.createElement("video");
+        elem.srcObject = stream;
+        elem.id = producer.id;
+        elem.playsinline = false;
+        elem.autoplay = true;
+        elem.muted = true;
+        elem.className = "vid";
+        this.localMediaEl.appendChild(elem);
+        this.handleFS(elem.id);
+      }
+
+      producer.on("trackended", () => {
+        this.closeProducer(type);
+      });
+
+      producer.on("transportclose", () => {
+        console.log("Producer transport close");
+        if (!audio) {
+          elem.srcObject.getTracks().forEach(function (track) {
+            track.stop();
+          });
+          elem.parentNode.removeChild(elem);
+        }
+        this.producers.delete(producer.id);
+      });
+
+      producer.on("close", () => {
+        console.log("Closing producer");
+        if (!audio) {
+          elem.srcObject.getTracks().forEach(function (track) {
+            track.stop();
+          });
+          elem.parentNode.removeChild(elem);
+        }
+        this.producers.delete(producer.id);
+      });
+
+      this.producerLabel.set(type, producer.id);
+
+      switch (type) {
+        case mediaType.audio:
+          this.event(_EVENTS.startAudio);
+          break;
+        case mediaType.video:
+          this.event(_EVENTS.startVideo);
+          break;
+        case mediaType.screen:
+          this.event(_EVENTS.startScreen);
+          break;
+        default:
+          return;
+      }
+
+    } catch (err) {
+      console.log('Produce error:', err)
+    }
+  }
+
+
   async produce(type, deviceId = null) {
     let mediaConstraints = {};
     let audio = false;
@@ -337,13 +522,13 @@ class RoomClient {
       console.log("stream.getAudioTracks()[0]", stream.getAudioTracks()[0]);
       console.log("stream.getVideoTracks()[0]", stream.getVideoTracks()[0]);
 
-      if (stream.getAudioTracks()[0] != undefined && type =="screenType") sysAudio = true;
+      if (stream.getAudioTracks()[0] != undefined && type == "screenType") sysAudio = true;
 
       var params = {};
       var params1 = {};
       var params2 = {};
       var track = null;
-      let elem;
+
       if (screen == false) {
         track = audio ? stream.getAudioTracks()[0] : stream.getVideoTracks()[0];
         params = {
@@ -355,7 +540,6 @@ class RoomClient {
         console.log("track", track);
 
         if (track !== null) {
-          debugger;
           sysAudio = true;
           params1 = {
             track,
@@ -444,7 +628,6 @@ class RoomClient {
             this.event(_EVENTS.startVideo);
             break;
           case mediaType.screen:
-            sysAudio == false;
             this.event(_EVENTS.startScreen);
             break;
           default:
@@ -674,6 +857,7 @@ class RoomClient {
         this.event(_EVENTS.stopVideo);
         break;
       case mediaType.screen:
+        sysAudio = false;
         this.event(_EVENTS.stopScreen);
         break;
     }
