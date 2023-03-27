@@ -179,10 +179,16 @@ io.on('connection', (socket) => {
     //TODO null handling
     let params = await roomList.get(socket.room_id).consume(socket.id, consumerTransportId, producerId, rtpCapabilities)
 
+    if (params == null) {
+      console.log("...................")
+      console.log("params is null");
+      console.log("...................")
+    }
+
     console.log('Consuming', {
       name: `${roomList.get(socket.room_id) && roomList.get(socket.room_id).getPeers().get(socket.id).name}`,
       producer_id: `${producerId}`,
-      consumer_id: `${params.id}`
+      consumer_id: `${(params == null) ? null : params.id}`
     })
 
     callback(params)
@@ -237,17 +243,20 @@ io.on('connection', (socket) => {
   })
 
 
-  socket.on('getParticipantList', (clientRoom, callback) => {
+  socket.on('getParticipantList', (clientRoom) => {
     let roomDetails = getRoomDetails(clientRoom);
-
-    var peersArray = [];
-
-    for (var [peerId, peer] of roomDetails.peers) {
-      peersArray.push({ id: peerId, name: peer.name });
+    try {
+      var resp = JSON.stringify([...roomDetails.peers.entries()].map(([id, peer]) => ({
+        id,
+        name: peer.name,
+        transports: [...peer.transports],
+        consumers: [...peer.consumers],
+        producers: [...peer.producers]
+      })));
+    } catch (error) {
+      var resp = null;
     }
-
-    const resp = JSON.stringify(peersArray);
-    callback(resp);
+    io.sockets.emit('updatedParticipants', resp);
   });
 
 })

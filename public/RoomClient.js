@@ -76,6 +76,25 @@ class RoomClient {
 
   ////////// INIT /////////
 
+
+
+  getparticipantList(room_id) {
+    var room_id_string = room_id.toString();
+    socket.emit('getParticipantList', room_id_string);
+    debugger;
+    socket.on('updatedParticipants', (roomDetails) => {
+      if (roomDetails != null) {
+        var roomDetailsObj = JSON.parse(roomDetails);
+        var dateNow = new Date().toLocaleTimeString();
+        document.getElementById("participantList").innerHTML = "";
+        roomDetailsObj.forEach(element => {
+          document.getElementById("participantList").innerHTML += "<p class='participantName'>" + element.name + "</p>";
+        });
+        console.log(dateNow, roomDetailsObj);
+      }
+    });
+  }
+
   async createRoom(room_id) {
     await this.socket
       .request("createRoom", {
@@ -100,8 +119,12 @@ class RoomClient {
           this.device = device;
           await this.initTransports(device);
           this.socket.emit("getProducers");
-          this.produce(RoomClient.mediaType.video, videoSelect.value);
-          this.produce(RoomClient.mediaType.audio, audioSelect.value);
+
+          // this.produce(RoomClient.mediaType.video, videoSelect.value);
+          // this.produce(RoomClient.mediaType.audio, audioSelect.value);
+
+          this.getparticipantList(room_id);
+
         }.bind(this)
       )
       .catch((err) => {
@@ -278,15 +301,6 @@ class RoomClient {
   }
 
   //////// MAIN FUNCTIONS /////////////
-
-  getParticipantList() {
-    socket.emit('getParticipantList', '123', (roomDetails) => {
-      console.log(roomDetails);
-    });
-  }
-
-
-
 
   async replace(type, deviceId = null) {
     debugger;
@@ -959,7 +973,7 @@ class RoomClient {
     } else {
       clean();
     }
-
+    this.getparticipantList(this.room_id)
     this.event(_EVENTS.exitRoom);
   }
 

@@ -22,7 +22,7 @@
       <div id="login">
         <br />
         <i class="fas fa-server"> Room: </i
-        ><input id="roomidInput" value="123" type="text" />
+        ><input id="roomidInput" value="589" type="text" />
         <!--<button id="createRoom" onclick="createRoom(roomid.value)" label="createRoom">Create Room</button>-->
         <i class="fas fa-user"> User: </i
         ><input id="nameInput" value="user" type="text" />
@@ -89,9 +89,6 @@
         >
           <i class="fas fa-desktop"></i> Close screen
         </button>
-        <button id="Participants" onclick="rc.getParticipantList()">
-          Participants
-        </button>
         <br /><br />
         <div id="devicesList" class="hidden">
           <i class="fas fa-microphone"></i> Audio:
@@ -115,6 +112,7 @@
     </div>
 
     <div class="container">
+      <div id="participantList"></div>
       <div id="videoMedia" class="hidden">
         <h4><i class="fab fa-youtube"></i> Local media</h4>
         <div id="localMedia" class="containers">

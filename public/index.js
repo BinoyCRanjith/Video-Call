@@ -5,7 +5,8 @@ const socket = io();
 
 let producer = null;
 
-nameInput.value = "user_" + Math.round(Math.random() * 1000);
+// nameInput.value = "user_" + Math.round(Math.random() * 1000);
+nameInput.value = "Enter your name here!";
 
 socket.request = function request(type, data = {}) {
   return new Promise((resolve, reject) => {
@@ -20,18 +21,12 @@ socket.request = function request(type, data = {}) {
 };
 
 let rc = null;
-// const UserDetail = ({
-//   // type: `${kind}`,
-//   name: `${roomList.get(socket.room_id).getPeers().get(socket.id).name}`
-//   // id: `${producer_id}`
-// })
 
 function joinRoom(name, room_id) {
   if (rc && rc.isOpen()) {
     console.log("Already connected to a room");
   } else {
     initEnumerateDevices();
-    // UserDetails();
 
     rc = new RoomClient(
       localMedia,
@@ -72,7 +67,6 @@ function reveal(elem) {
 }
 
 function addListeners() {
-  debugger;
   rc.on(RoomClient.EVENTS.startScreen, () => {
     hide(startScreenButton);
     reveal(stopScreenButton);
@@ -110,12 +104,12 @@ function addListeners() {
   });
 }
 
-let isEnumerateAudioDevices = false;
-let isEnumerateVideoDevices = false;
+let isEnumerateDevices = false;
 
 function initEnumerateDevices() {
   // Many browsers, without the consent of getUserMedia, cannot enumerate the devices.
-  debugger;
+  if (isEnumerateDevices) return;
+
   const constraints = {
     audio: true,
     video: true,
@@ -135,62 +129,22 @@ function initEnumerateDevices() {
 }
 
 function enumerateDevices() {
-  debugger;
-  if (!isEnumerateVideoDevices) {
-    // Load mediaDevice options
-    navigator.mediaDevices.enumerateDevices().then((devices) =>
-      devices.forEach((device) => {
-        let el = null;
-        if ("videoinput" === device.kind) {
-          el = videoSelect;
-          if (!el) return;
+  // Load mediaDevice options
+  navigator.mediaDevices.enumerateDevices().then((devices) =>
+    devices.forEach((device) => {
+      let el = null;
+      if ("audioinput" === device.kind) {
+        el = audioSelect;
+      } else if ("videoinput" === device.kind) {
+        el = videoSelect;
+      }
+      if (!el) return;
 
-          let option = document.createElement("option");
-          option.value = device.deviceId;
-          option.innerText = device.label;
-          el.appendChild(option);
-        }
-      })
-    );
-    isEnumerateVideoDevices = true;
-  }
-
-  if (!isEnumerateAudioDevices) {
-    navigator.mediaDevices.enumerateDevices().then((devices) =>
-      devices.forEach((device) => {
-        let el = null;
-
-        if ("audioinput" === device.kind) {
-          el = audioSelect;
-          if (!el) return;
-
-          let option = document.createElement("option");
-          option.value = device.deviceId;
-          option.innerText = device.label;
-          el.appendChild(option);
-        }
-      })
-    );
-    isEnumerateAudioDevices = true;
-  }
+      let option = document.createElement("option");
+      option.value = device.deviceId;
+      option.innerText = device.label;
+      el.appendChild(option);
+      isEnumerateDevices = true;
+    })
+  );
 }
-// console.log('Produce', {
-//   type: `${kind}`,
-//   name: `${roomList.get(socket.room_id).getPeers().get(socket.id).name}`,
-//   id: `${producer_id}`
-// })
-// function UserDetails()
-// {
-//   debugger;
-//   const userList = document.getElementById('user-list');
-//   const ul = document.createElement('ul');
-
-//   devices.forEach(UserDetail => {
-//     const li = document.createElement('li');
-//     li.textContent = `Name: ${UserDetail.name}`;
-//     ul.appendChild(li);
-//   });
-
-// userList.appendChild(ul);
-
-// }
