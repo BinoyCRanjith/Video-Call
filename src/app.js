@@ -210,6 +210,7 @@ io.on('connection', (socket) => {
 
     if (!socket.room_id) return
     roomList.get(socket.room_id).removePeer(socket.id)
+    this.getparticipantList(socket.room_id)
   })
 
   socket.on('producerClosed', ({ producer_id }) => {
@@ -245,6 +246,7 @@ io.on('connection', (socket) => {
 
   socket.on('getParticipantList', (clientRoom) => {
     let roomDetails = getRoomDetails(clientRoom);
+    console.log(roomDetails);
     try {
       var resp = JSON.stringify([...roomDetails.peers.entries()].map(([id, peer]) => ({
         id,
@@ -257,6 +259,7 @@ io.on('connection', (socket) => {
       var resp = null;
     }
     io.sockets.emit('updatedParticipants', resp);
+    console.log('updatedParticipants',resp);
   });
 
 })

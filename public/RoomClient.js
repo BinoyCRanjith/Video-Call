@@ -80,6 +80,7 @@ class RoomClient {
 
   getparticipantList(room_id) {
     var room_id_string = room_id.toString();
+    console.log(room_id_string);
     socket.emit('getParticipantList', room_id_string);
     debugger;
     socket.on('updatedParticipants', (roomDetails) => {
