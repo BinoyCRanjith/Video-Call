@@ -78,22 +78,54 @@ class RoomClient {
 
 
 
-  getparticipantList(room_id) {
+  async getparticipantList(room_id) {
+    await this.socket.emit('updateRoom');
+    await this.socket.on('roomUpdateBroadcast', () => {
+      this.updateRoom(room_id);
+    });
+ 
+  }
+
+  async updateRoom(room_id) {
     var room_id_string = room_id.toString();
-    console.log(room_id_string);
-    socket.emit('getParticipantList', room_id_string);
-    debugger;
-    socket.on('updatedParticipants', (roomDetails) => {
+    socket.emit('getParticipantList', room_id_string, (roomDetails) => {
+      // if (roomDetails != null) {
+      //   var roomDetailsObj = JSON.parse(roomDetails);
+      //   var dateNow = new Date().toLocaleTimeString();
+      //   document.getElementById("participantList").innerHTML = "";
+      //   roomDetailsObj.forEach(element => {
+      //     document.getElementById("participantList").innerHTML += "<p class='participantName'>" + element.name + "</p>";
+      //   });
+      //   console.log(dateNow, roomDetailsObj);
+      // }
       if (roomDetails != null) {
         var roomDetailsObj = JSON.parse(roomDetails);
+        console.log("RoomOBJ",roomDetailsObj);
         var dateNow = new Date().toLocaleTimeString();
-        document.getElementById("participantList").innerHTML = "";
+        var table = document.createElement("table");
+        var tableHeader = table.insertRow();
+        var headerCell1 = tableHeader.insertCell(0);
+        headerCell1.innerHTML = "Participant Name";
         roomDetailsObj.forEach(element => {
-          document.getElementById("participantList").innerHTML += "<p class='participantName'>" + element.name + "</p>";
+          var row = table.insertRow(); 
+          var cell1 = row.insertCell(0);
+          cell1.innerHTML = element.name;
+          var audioPauseButton = document.createElement("button");
+
+
+          audioPauseButton.id = element.producers[0];
+
+          
+          audioPauseButton.innerHTML = "Click me";
+          cell1.appendChild(audioPauseButton);
         });
+        document.getElementById("participantList").innerHTML = "";
+        document.getElementById("participantList").appendChild(table);
         console.log(dateNow, roomDetailsObj);
       }
-    });
+      
+    })
+
   }
 
   async createRoom(room_id) {
@@ -304,7 +336,6 @@ class RoomClient {
   //////// MAIN FUNCTIONS /////////////
 
   async replace(type, deviceId = null) {
-    debugger;
     let mediaConstraints = {}
     let audio = false
     switch (type) {
@@ -776,6 +807,7 @@ class RoomClient {
           elem = document.createElement("video");
           elem.srcObject = stream;
           elem.id = consumer.id;
+          elem.setAttribute("data-producer_id", producer_id);
           elem.playsinline = false;
           elem.autoplay = true;
           elem.className = "vid";
@@ -785,11 +817,12 @@ class RoomClient {
           elem = document.createElement("audio");
           elem.srcObject = stream;
           elem.id = consumer.id;
+          elem.setAttribute("data-producer_id", producer_id);
           elem.playsinline = false;
           elem.autoplay = true;
           this.remoteAudioEl.appendChild(elem);
         }
-
+        this.getparticipantList(this.room_id);
         consumer.on(
           "trackended",
           function () {
@@ -974,7 +1007,7 @@ class RoomClient {
     } else {
       clean();
     }
-    this.getparticipantList(this.room_id)
+    this.getparticipantList(this.room_id);
     this.event(_EVENTS.exitRoom);
   }
 

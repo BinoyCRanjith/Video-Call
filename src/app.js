@@ -210,7 +210,9 @@ io.on('connection', (socket) => {
 
     if (!socket.room_id) return
     roomList.get(socket.room_id).removePeer(socket.id)
-    this.getparticipantList(socket.room_id)
+
+    io.sockets.emit('roomUpdateBroadcast');
+
   })
 
   socket.on('producerClosed', ({ producer_id }) => {
@@ -243,10 +245,13 @@ io.on('connection', (socket) => {
     callback('successfully exited room')
   })
 
+  socket.on('updateRoom', () => {
+    io.sockets.emit('roomUpdateBroadcast');
+  })
 
-  socket.on('getParticipantList', (clientRoom) => {
+  socket.on('getParticipantList', (clientRoom, callback) => {
     let roomDetails = getRoomDetails(clientRoom);
-    console.log(roomDetails);
+    console.log("RoomDetailsConsumercheck",roomDetails)
     try {
       var resp = JSON.stringify([...roomDetails.peers.entries()].map(([id, peer]) => ({
         id,
@@ -258,8 +263,7 @@ io.on('connection', (socket) => {
     } catch (error) {
       var resp = null;
     }
-    io.sockets.emit('updatedParticipants', resp);
-    console.log('updatedParticipants',resp);
+    callback(resp);
   });
 
 })
@@ -271,6 +275,28 @@ function getRoomDetails(room_id) {
     return null;
   }
 }
+
+// async function broadcastRoomDetails(clientRoom) {
+
+
+
+
+//   let roomDetails = getRoomDetails(clientRoom);
+// try {
+//   var resp = JSON.stringify([...roomDetails.peers.entries()].map(([id, peer]) => ({
+//     id,
+//     name: peer.name,
+//     transports: [...peer.transports],
+//     consumers: [...peer.consumers],
+//     producers: [...peer.producers]
+//   })));
+// } catch (error) {
+//   var resp = null;
+// }
+// io.sockets.emit('updatedParticipants', resp);
+//   return roomDetails;
+
+// }
 
 // TODO remove - never used?
 function room() {
