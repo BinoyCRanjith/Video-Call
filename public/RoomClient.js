@@ -83,50 +83,48 @@ class RoomClient {
     await this.socket.on('roomUpdateBroadcast', () => {
       this.updateRoom(room_id);
     });
- 
+
   }
 
   async updateRoom(room_id) {
     var room_id_string = room_id.toString();
     socket.emit('getParticipantList', room_id_string, (roomDetails) => {
-      // if (roomDetails != null) {
-      //   var roomDetailsObj = JSON.parse(roomDetails);
-      //   var dateNow = new Date().toLocaleTimeString();
-      //   document.getElementById("participantList").innerHTML = "";
-      //   roomDetailsObj.forEach(element => {
-      //     document.getElementById("participantList").innerHTML += "<p class='participantName'>" + element.name + "</p>";
-      //   });
-      //   console.log(dateNow, roomDetailsObj);
-      // }
       if (roomDetails != null) {
         var roomDetailsObj = JSON.parse(roomDetails);
-        console.log("RoomOBJ",roomDetailsObj);
         var dateNow = new Date().toLocaleTimeString();
-        var table = document.createElement("table");
-        var tableHeader = table.insertRow();
-        var headerCell1 = tableHeader.insertCell(0);
-        headerCell1.innerHTML = "Participant Name";
-        roomDetailsObj.forEach(element => {
-          var row = table.insertRow(); 
-          var cell1 = row.insertCell(0);
-          cell1.innerHTML = element.name;
-          var audioPauseButton = document.createElement("button");
+        var participantList = document.getElementById("participantList");
+        console.log("participantList",participantList);
+        participantList.innerHTML = "";
+        roomDetailsObj.forEach(participantElement => {
+          var row = document.createElement("tr");
+          var nameCell = document.createElement("td");
+          nameCell.innerText = participantElement.name;
+          var buttonCell = document.createElement("td");
+          var button = document.createElement("button");
+          button.innerText = "Mute";
+          button.id = participantElement.id;
+          button.addEventListener("click", async function () {
+            var producerIdcsv = button.getAttribute("data-producerArray");
+            const selectedProducerArray = producerIdcsv.split(',');
+            await this.pauseConsumer(selectedProducerArray);
+          });
+          buttonCell.appendChild(button);
+          row.appendChild(nameCell);
+          row.appendChild(buttonCell);
+          participantList.appendChild(row);
 
-
-          audioPauseButton.id = element.producers[0];
-
-          
-          audioPauseButton.innerHTML = "Click me";
-          cell1.appendChild(audioPauseButton);
+          var producerArray = [];
+          participantElement.producers.forEach(producerElement => {
+            producerArray.push(producerElement[0]);
+          });
+          button.setAttribute(`data-producerArray`, producerArray);
         });
-        document.getElementById("participantList").innerHTML = "";
-        document.getElementById("participantList").appendChild(table);
         console.log(dateNow, roomDetailsObj);
       }
-      
-    })
-
+    });
   }
+
+
 
   async createRoom(room_id) {
     await this.socket
@@ -795,6 +793,12 @@ class RoomClient {
     }
   }
 
+  async pauseConsumer(producerArr) {
+
+    console.log(producerArr);
+
+  }
+
   async consume(producer_id) {
     //let info = await this.roomInfo()
 
@@ -808,6 +812,7 @@ class RoomClient {
           elem.srcObject = stream;
           elem.id = consumer.id;
           elem.setAttribute("data-producer_id", producer_id);
+          elem.setAttribute("data-kind", kind);
           elem.playsinline = false;
           elem.autoplay = true;
           elem.className = "vid";
@@ -818,11 +823,14 @@ class RoomClient {
           elem.srcObject = stream;
           elem.id = consumer.id;
           elem.setAttribute("data-producer_id", producer_id);
+          elem.setAttribute("data-kind", kind);
           elem.playsinline = false;
           elem.autoplay = true;
           this.remoteAudioEl.appendChild(elem);
         }
+
         this.getparticipantList(this.room_id);
+
         consumer.on(
           "trackended",
           function () {

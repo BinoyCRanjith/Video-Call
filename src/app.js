@@ -251,7 +251,6 @@ io.on('connection', (socket) => {
 
   socket.on('getParticipantList', (clientRoom, callback) => {
     let roomDetails = getRoomDetails(clientRoom);
-    console.log("RoomDetailsConsumercheck",roomDetails)
     try {
       var resp = JSON.stringify([...roomDetails.peers.entries()].map(([id, peer]) => ({
         id,
