@@ -57,8 +57,6 @@ function roomOpen() {
   control.className = "";
   reveal(videoMedia);
   reveal(participantList);
-  reveal(pauseAudioButton);
-  hide(resumeAudioButton);
 }
 
 function hide(elem) {
@@ -87,16 +85,6 @@ function addListeners() {
   rc.on(RoomClient.EVENTS.startAudio, () => {
     hide(startAudioButton);
     reveal(stopAudioButton);
-  });
-
-
-  rc.on(RoomClient.EVENTS.pauseAudio, () => {
-    hide(pauseAudioButton);
-    reveal(resumeAudioButton);
-  })
-  rc.on(RoomClient.EVENTS.resumeAudio, () => {
-    hide(resumeAudioButton);
-    reveal(pauseAudioButton);
   });
 
   rc.on(RoomClient.EVENTS.startVideo, () => {

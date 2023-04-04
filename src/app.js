@@ -175,6 +175,18 @@ io.on('connection', (socket) => {
     })
   })
 
+  socket.on('pauseConsumer', async (consumer_id) => {
+    consumer = (roomList.get(socket.room_id).getPeers().get(socket.id).consumers.get(consumer_id));
+    consumer.pause();
+  });
+
+  socket.on('resumeConsumer', async (consumer_id) => {
+    consumer = (roomList.get(socket.room_id).getPeers().get(socket.id).consumers.get(consumer_id));
+    consumer.resume();
+  });
+
+
+
   socket.on('consume', async ({ consumerTransportId, producerId, rtpCapabilities }, callback) => {
     //TODO null handling
     let params = await roomList.get(socket.room_id).consume(socket.id, consumerTransportId, producerId, rtpCapabilities)
