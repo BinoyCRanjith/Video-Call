@@ -8,11 +8,20 @@ const config = require('./config')
 const path = require('path')
 const Room = require('./Room')
 const Peer = require('./Peer')
+const { Socket } = require('socket.io')
 
 const options = {
   key: fs.readFileSync(path.join(__dirname, config.sslKey), 'utf-8'),
   cert: fs.readFileSync(path.join(__dirname, config.sslCrt), 'utf-8')
 }
+
+// Define the active speaker observer options
+const activeSpeakerObserverOptions = {
+  interval: 1000, // interval (in ms) at which to update active speaker
+  threshold: -70, // audio level (in dB) above which a peer is considered active
+  maxEntries: 3, // maximum number of entries to keep in the active speaker list
+  peerActivityTimeout: 5000 // time (in ms) after which a peer is considered inactive
+};
 
 const httpsServer = https.createServer(options, app)
 const io = require('socket.io')(httpsServer)
@@ -286,28 +295,6 @@ function getRoomDetails(room_id) {
     return null;
   }
 }
-
-// async function broadcastRoomDetails(clientRoom) {
-
-
-
-
-//   let roomDetails = getRoomDetails(clientRoom);
-// try {
-//   var resp = JSON.stringify([...roomDetails.peers.entries()].map(([id, peer]) => ({
-//     id,
-//     name: peer.name,
-//     transports: [...peer.transports],
-//     consumers: [...peer.consumers],
-//     producers: [...peer.producers]
-//   })));
-// } catch (error) {
-//   var resp = null;
-// }
-// io.sockets.emit('updatedParticipants', resp);
-//   return roomDetails;
-
-// }
 
 // TODO remove - never used?
 function room() {

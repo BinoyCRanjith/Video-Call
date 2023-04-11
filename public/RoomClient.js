@@ -18,6 +18,8 @@ var audioProducerId = null;
 var videoProducerId = null;
 var sysAudio = false;
 let elem;
+var userName = null;
+var roomDetailsObj;
 
 class RoomClient {
   constructor(
@@ -72,6 +74,7 @@ class RoomClient {
         successCallback();
       }.bind(this)
     );
+    userName = null;
   }
 
   ////////// INIT /////////
@@ -90,66 +93,122 @@ class RoomClient {
     var room_id_string = room_id.toString();
     socket.emit('getParticipantList', room_id_string, (roomDetails) => {
       if (roomDetails != null) {
-        var roomDetailsObj = JSON.parse(roomDetails);
+        roomDetailsObj = JSON.parse(roomDetails);
 
         var participantList = document.getElementById("participantList");
         participantList.innerHTML = "";
         roomDetailsObj.forEach(participantElement => {
+          if (participantElement.name == userName) { return; }
           var row = document.createElement("tr");
           var nameCell = document.createElement("td");
           nameCell.innerText = participantElement.name;
 
-          var pauseButtonCell = document.createElement("td");
-          var pauseButton = document.createElement("button");
-          pauseButton.innerText = "Mute";
-          pauseButton.id = participantElement.id;
-          pauseButton.addEventListener("click", async function () {
-            var producerIdcsv = pauseButton.getAttribute("data-producerArray");
+          var pauseAudioButtonCell = document.createElement("td");
+          var pauseAudioButton = document.createElement("button");
+          pauseAudioButton.innerText = "Mute Audio";
+          pauseAudioButton.id = participantElement.id;
+          pauseAudioButton.addEventListener("click", async function () {
+            var producerIdcsv = pauseAudioButton.getAttribute("data-producerArray");
             const selectedProducerArray = producerIdcsv.split(',');
-            var consumerArray = rc.getConsumerId(selectedProducerArray);
+            var consumerArray = rc.getAudioConsumerId(selectedProducerArray);
             consumerArray.forEach(element => {
               rc.pauseConsumer(element);
             });
           });
-          pauseButtonCell.appendChild(pauseButton);
+          pauseAudioButtonCell.appendChild(pauseAudioButton);
 
-          var resumeButtonCell = document.createElement("td");
-          var resumeButton = document.createElement("button");
-          resumeButton.innerText = "Unmute";
-          resumeButton.id = participantElement.id;
-          resumeButton.addEventListener("click", async function () {
-            var producerIdcsv = resumeButton.getAttribute("data-producerArray");
+          var resumeAudioButtonCell = document.createElement("td");
+          var resumeAudioButton = document.createElement("button");
+          resumeAudioButton.innerText = "Unmute Audio";
+          resumeAudioButton.id = participantElement.id;
+          resumeAudioButton.addEventListener("click", async function () {
+            var producerIdcsv = resumeAudioButton.getAttribute("data-producerArray");
             const selectedProducerArray = producerIdcsv.split(',');
-            var consumerArray = rc.getConsumerId(selectedProducerArray);
+            var consumerArray = rc.getAudioConsumerId(selectedProducerArray);
             consumerArray.forEach(element => {
               rc.resumeConsumer(element);
             });
           });
-          resumeButtonCell.appendChild(resumeButton);
+          resumeAudioButtonCell.appendChild(resumeAudioButton);
+
+          var pauseVideoButtonCell = document.createElement("td");
+          var pauseVideoButton = document.createElement("button");
+          pauseVideoButton.innerText = "Pause Video";
+          pauseVideoButton.id = participantElement.id;
+          pauseVideoButton.addEventListener("click", async function () {
+            var producerIdcsv = pauseVideoButton.getAttribute("data-producerArray");
+            const selectedProducerArray = producerIdcsv.split(',');
+            var consumerArray = rc.getVideoConsumerId(selectedProducerArray);
+            consumerArray.forEach(element => {
+              rc.pauseConsumer(element);
+            });
+          });
+          pauseVideoButtonCell.appendChild(pauseVideoButton);
+
+          var resumeVideoButtonCell = document.createElement("td");
+          var resumeVideoButton = document.createElement("button");
+          resumeVideoButton.innerText = "Play Video";
+          resumeVideoButton.id = participantElement.id;
+          resumeVideoButton.addEventListener("click", async function () {
+            var producerIdcsv = resumeVideoButton.getAttribute("data-producerArray");
+            const selectedProducerArray = producerIdcsv.split(',');
+            var consumerArray = rc.getVideoConsumerId(selectedProducerArray);
+            consumerArray.forEach(element => {
+              rc.resumeConsumer(element);
+            });
+          });
+          resumeVideoButtonCell.appendChild(resumeVideoButton);
 
           row.appendChild(nameCell);
-          row.appendChild(pauseButtonCell);
-          row.appendChild(resumeButtonCell);
+          row.appendChild(pauseAudioButtonCell);
+          row.appendChild(resumeAudioButtonCell);
+          row.appendChild(pauseVideoButtonCell);
+          row.appendChild(resumeVideoButtonCell);
           participantList.appendChild(row);
 
           var producerArray = [];
           participantElement.producers.forEach(producerElement => {
             producerArray.push(producerElement[0]);
           });
-          pauseButton.setAttribute(`data-producerArray`, producerArray);
-          resumeButton.setAttribute(`data-producerArray`, producerArray);
+          pauseAudioButton.setAttribute(`data-producerArray`, producerArray);
+          resumeAudioButton.setAttribute(`data-producerArray`, producerArray);
+          pauseVideoButton.setAttribute(`data-producerArray`, producerArray);
+          resumeVideoButton.setAttribute(`data-producerArray`, producerArray);
         });
       }
     });
   }
 
 
-  getConsumerId(producerArr) {
+  getAudioConsumerId(producerArr) {
 
     var confirmedConsumerArr = [];
 
     const divElement = document.querySelector('#remoteAudios');
     const audioElementsArr = divElement.getElementsByTagName('audio');
+
+    for (let i = 0; i < audioElementsArr.length; i++) {
+      const audioId = audioElementsArr[i].getAttribute('data-producer_id');
+      var consumerId;
+
+      producerArr.forEach(element => {
+        if (element == audioId) {
+          consumerId = audioElementsArr[i].getAttribute('id');
+          // this.pauseConsumer(consumerId);
+          confirmedConsumerArr.push(consumerId);
+        }
+      });
+    }
+    return confirmedConsumerArr;
+  }
+
+
+  getVideoConsumerId(producerArr) {
+
+    var confirmedConsumerArr = [];
+
+    const divElement = document.querySelector('#remoteVideos');
+    const audioElementsArr = divElement.getElementsByTagName('video');
 
     for (let i = 0; i < audioElementsArr.length; i++) {
       const audioId = audioElementsArr[i].getAttribute('data-producer_id');
@@ -203,6 +262,8 @@ class RoomClient {
 
           this.produce(RoomClient.mediaType.video, videoSelect.value);
           this.produce(RoomClient.mediaType.audio, audioSelect.value);
+
+          userName = document.getElementById("nameInput").value;
 
           this.getparticipantList(room_id);
 
@@ -709,15 +770,15 @@ class RoomClient {
 
         videoProducerId = producer.id;
 
-        elem = document.createElement("video");
-        elem.srcObject = stream;
-        elem.id = producer.id;
-        elem.playsinline = false;
-        elem.autoplay = true;
-        elem.muted = true;
-        elem.className = "vid";
-        this.localMediaEl.appendChild(elem);
-        this.handleFS(elem.id);
+        // elem = document.createElement("video");
+        // elem.srcObject = stream;
+        // elem.id = producer.id;
+        // elem.playsinline = false;
+        // elem.autoplay = true;
+        // elem.muted = true;
+        // elem.className = "vid";
+        // this.localMediaEl.appendChild(elem);
+        // this.handleFS(elem.id);
 
         producer.on("trackended", () => {
           this.closeProducer(type);
@@ -767,6 +828,7 @@ class RoomClient {
   }
 
   async consume(producer_id) {
+    this.updateRoom(this.room_id);
     //let info = await this.roomInfo()
 
     this.getConsumeStream(producer_id).then(
@@ -775,15 +837,41 @@ class RoomClient {
 
         let elem;
         if (kind === "video") {
-          elem = document.createElement("video");
+
+          const newParentDiv = document.createElement("div");
+          newParentDiv.className = "parent-div";
+          newParentDiv.setAttribute("data-RemVidConId", consumer.id);
+          newParentDiv.setAttribute("data-RemVidProId", producer_id);
+          const newChild1Div = document.createElement("div");
+          newChild1Div.className = "child-div1";
+          const elem = document.createElement("video");
           elem.srcObject = stream;
           elem.id = consumer.id;
+          let name = "";
+          roomDetailsObj.forEach((userArr) => {
+            userArr.producers.forEach((producerArr) => {
+              if (producerArr[0] == producer_id) {
+                name = userArr.name;
+              }
+            });
+          });
+          elem.setAttribute("data-user_name", name);
           elem.setAttribute("data-producer_id", producer_id);
           elem.playsinline = false;
           elem.autoplay = true;
-          elem.className = "vid";
-          this.remoteVideoEl.appendChild(elem);
+          elem.className = "vidRem";
+          newChild1Div.appendChild(elem);
+          newParentDiv.appendChild(newChild1Div);
+          this.remoteVideoEl.appendChild(newParentDiv);
           this.handleFS(elem.id);
+          const newChild2Div = document.createElement("div");
+          newChild2Div.className = "child-div2";
+          const Pname = document.createElement("p");
+          Pname.textContent = name;
+          newChild2Div.appendChild(Pname);
+          newParentDiv.appendChild(newChild2Div);
+
+
         } else {
           elem = document.createElement("audio");
           elem.srcObject = stream;
@@ -861,9 +949,9 @@ class RoomClient {
     this.producers.delete(producer_id);
     this.producerLabel.delete(type);
 
-    if (type !== mediaType.audio) {
+    if (type == mediaType.video) {
       let elem = document.getElementById(producer_id);
-      console.log("elem.srcObject", elem.srcObject);
+      console.log("**********", elem.srcObject);
       elem.srcObject.getTracks().forEach(function (track) {
         track.stop();
       });
@@ -937,24 +1025,30 @@ class RoomClient {
   }
 
   removeConsumer(consumer_id) {
-    let elem = document.getElementById(consumer_id);
-    elem.srcObject.getTracks().forEach(function (track) {
-      track.stop();
-    });
-    elem.parentNode.removeChild(elem);
+    // let elem = document.getElementById(consumer_id);
+    // elem.srcObject.getTracks().forEach(function (track) {
+    //   track.stop();
+    // });
+    // elem.parentNode.removeChild(elem);
+    const myDiv = document.querySelector(`[data-RemVidConId="${consumer_id}"]`);
+    myDiv.remove();
 
     this.consumers.delete(consumer_id);
   }
 
   exit(offline = false) {
-    if (videoProducerId != null) {
-      let elem = document.getElementById(videoProducerId);
-      console.log("elem.srcObject", elem.srcObject);
-      elem.srcObject.getTracks().forEach(function (track) {
-        track.stop();
-      });
-      elem.parentNode.removeChild(elem);
-    }
+    // if (videoProducerId != null) {
+    //   let elem = document.getElementById(videoProducerId);
+    //   console.log("elem.srcObject", elem.srcObject);
+    //   elem.srcObject.getTracks().forEach(function (track) {
+    //     track.stop();
+    //   });
+    //   elem.parentNode.removeChild(elem);
+    // }
+
+    const myDiv = document.querySelector(`[data-RemVidProId="${videoProducerId}"]`);
+    if (myDiv != null)
+      myDiv.remove();
 
     sysAudio = false;
 
